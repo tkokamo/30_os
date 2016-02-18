@@ -65,9 +65,59 @@ pipelineflash:
 	#rest
 	movl	$DSKCAC0+512, %esi
 	movl	$DSKCAC0+512, %edi
-	movl	$0x00,
+	movl	$0x00, $ecx
+	movb	(CYLS), %cl
+	imull	$512*18*2/4, %ecx
+	subl	$512/4, %ecx
+	call	memcpy
+
+	#start bootpack
+	movl	$BOTPAK, %ebx
+	movl	$0x11a8, %ecx
+	addl	$3, %ecx
+	shrl	$2, %ecx
+	jz	skip
+	movl	$0x10c8, %esi
+	addl	%ebx, %esi
+	movl	$0x00310000, %edi
+	call	memcpy
+
+skip:
+	movl	$0x00310000, %esp
+	ljmpl	$2*8, $0x00000000
+
+
+	###########################
+	## functions
+
+wiatkbdout:
+	inb	$0x64, %al
+	andb	$0x02, %al
+	inb	$0x60, %al
+	jnz	waitkdbout
+	ret
+
+memcpy:
+	movl	(%esi), %eax
+	addl	$4, %esi
+	movl	%eax, (%edi)
+	addl	$4, %edi
+	subl	$1, %ecx
+	jnz	memcpy
+	ret
 	
-fin:
-	hlt
-	jmp	fin
-	
+#############################
+# GDT
+.align 8
+GDT0:
+.skip 8, 0x00
+	.word 0xffff, 0x0000, 0x9200, 0x00cf # rw segment 32bit
+	.word 0xffff, 0x0000, 0x9a28, 0x0047 # executable segment 32bit
+	.word 0x0000
+
+GDTR0:
+	.word 8*3-1
+	.int  GDT0
+
+	.align 8
+bootpack:	
