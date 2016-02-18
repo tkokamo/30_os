@@ -1,0 +1,15 @@
+#include "func.h"
+
+void Main(void)
+{
+  int i;
+
+  for (i = 0; i <= 0xaffff; i++) {
+    write_mem8(i, 10);
+  }
+
+  for (;;)
+    io_hlt();
+  
+
+}
